@@ -32,6 +32,9 @@ export async function addClient(formData: FormData) {
     },
   });
 
+  revalidatePath("/dashboard");
+}
+
 export async function addBooking(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -60,6 +63,44 @@ export async function addBooking(formData: FormData) {
       endsAt,
       status: "SCHEDULED"
     }
+  });
+
+  revalidatePath("/dashboard");
+}
+
+export async function createInvoice(bookingId: string, amountDollars: number) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { business: true }
+  });
+
+  if (!booking) throw new Error("Booking not found");
+
+  // Basic validation that user owns this business
+  const membership = await prisma.membership.findFirst({
+    where: { userId: session.user.id, businessId: booking.businessId },
+  });
+
+  if (!membership) throw new Error("Unauthorized to invoice this booking");
+
+  // Create DRAFT invoice the client owes
+  await prisma.invoice.create({
+    data: {
+      businessId: booking.businessId,
+      clientId: booking.clientId,
+      bookingId: booking.id,
+      amountCents: Math.round(amountDollars * 100), // Stripe & our DB use cents to avoid float math bugs
+      status: "DRAFT",
+    }
+  });
+
+  // Mark the booking as complete so they know to stop working and wait for payment
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: { status: "COMPLETED" }
   });
 
   revalidatePath("/dashboard");

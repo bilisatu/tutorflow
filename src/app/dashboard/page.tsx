@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AddClientForm } from "./add-client-form";
 import { AddBookingForm } from "./add-booking-form";
+import { InvoiceButton } from "./invoice-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -40,6 +41,19 @@ export default async function DashboardPage() {
         take: 5
       })
     : [];
+
+  // 5. Fetch real invoices
+  const invoices = membership
+    ? await prisma.invoice.findMany({
+        where: { businessId: membership.businessId },
+        include: { client: true, booking: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : [];
+
+  const totalOwed = invoices
+    .filter(i => i.status !== "PAID")
+    .reduce((sum, current) => sum + current.amountCents, 0) / 100;
 
   return (
     <main className="min-h-screen px-6 py-8 md:px-10 lg:px-14">
@@ -138,6 +152,12 @@ export default async function DashboardPage() {
                         {booking.status}
                       </span>
                     </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted">
+                        Lesson
+                      </p>
+                      <InvoiceButton bookingId={booking.id} />
+                    </div>
                   </div>
                 ))
               )}
@@ -146,23 +166,44 @@ export default async function DashboardPage() {
 
           <article className="glass rounded-[2rem] p-6 md:p-8">
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-              AI workflow starter
+              Revenue Engine
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Recent follow-up drafts</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Pending Invoices</h2>
             <div className="mt-6 space-y-4">
-              {followUps.map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-[1.5rem] border border-foreground/8 bg-white/70 p-5"
-                >
-                  <p className="text-base font-semibold tracking-tight">
-                    {item.title}
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-muted">
-                    {item.summary}
-                  </p>
+              {invoices.length === 0 ? (
+                <div className="rounded-[1.5rem] border border-dashed border-foreground/20 p-8 text-center text-muted">
+                  No invoices generated from sessions yet.
                 </div>
-              ))}
+              ) : (
+                invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="rounded-[1.5rem] border border-foreground/8 bg-white/70 p-5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-base font-semibold tracking-tight">
+                        {invoice.client.fullName}
+                      </p>
+                      <span className="text-lg font-semibold text-brand-deep">
+                        ${(invoice.amountCents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <p className="text-sm text-muted">
+                        {invoice.status} • {invoice.createdAt.toLocaleDateString()}
+                      </p>
+                      <a 
+                        href={`https://stripe.com`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-xs font-semibold hover:underline"
+                      >
+                        Open payment link &rarr;
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </article>
         </section>
