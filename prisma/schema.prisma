@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  memberships   Membership[]
+  aiActions     AiAction[]
+}
+
+model Business {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  memberships   Membership[]
+  clients       Client[]
+  services      Service[]
+  bookings      Booking[]
+  invoices      Invoice[]
+  notes         Note[]
+  aiActions     AiAction[]
+}
+
+model Membership {
+  id            String        @id @default(cuid())
+  role          MembershipRole @default(OWNER)
+  createdAt     DateTime      @default(now())
+  userId        String
+  businessId    String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+}
+
+model Client {
+  id            String      @id @default(cuid())
+  businessId    String
+  fullName      String
+  email         String?
+  phone         String?
+  timezone      String?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+  invoices      Invoice[]
+}
+
+model Service {
+  id            String      @id @default(cuid())
+  businessId    String
+  name          String
+  description   String?
+  durationMins  Int
+  rateCents     Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  businessId    String
+  clientId      String
+  serviceId     String?
+  startsAt      DateTime
+  endsAt        DateTime
+  status        BookingStatus @default(SCHEDULED)
+  sessionNotes  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service       Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  notes         Note[]
+  invoices      Invoice[]
+}
+
+model Invoice {
+  id            String         @id @default(cuid())
+  businessId    String
+  clientId      String
+  bookingId     String?
+  amountCents   Int
+  status        InvoiceStatus  @default(DRAFT)
+  dueDate       DateTime?
+  issuedAt      DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  booking       Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payments      Payment[]
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  invoiceId     String
+  amountCents   Int
+  provider      PaymentProvider @default(MANUAL)
+  createdAt     DateTime      @default(now())
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Note {
+  id            String        @id @default(cuid())
+  businessId    String
+  bookingId     String?
+  title         String
+  body          String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+}
+
+model AiAction {
+  id            String        @id @default(cuid())
+  businessId    String
+  userId        String
+  kind          AiActionKind
+  input         String
+  output        String?
+  createdAt     DateTime      @default(now())
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum BookingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum PaymentProvider {
+  MANUAL
+  STRIPE
+}
+
+enum AiActionKind {
+  LESSON_SUMMARY
+  FOLLOW_UP_DRAFT
+}

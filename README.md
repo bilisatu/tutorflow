@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+TutorFlow is a focused SaaS starter for tutors and small service businesses. It gives you a production-leaning base for bookings, clients, invoices, notes, and one targeted AI workflow.
 
-## Getting Started
+## Stack
 
-First, run the development server:
+- Next.js 16 with the App Router
+- TypeScript
+- Tailwind CSS 4
+- Prisma with PostgreSQL-ready schema
+- ESLint
+
+## Included starter scope
+
+- Marketing landing page
+- Dashboard scaffold with sample operating data
+- Prisma schema for businesses, clients, bookings, invoices, payments, notes, and AI actions
+- Environment variable template for app and database configuration
+
+## Getting started
+
+Install dependencies if needed:
+
+```bash
+npm install
+```
+
+Copy the environment file and update values:
+
+```bash
+copy .env.example .env
+```
+
+Generate the Prisma client:
+
+```bash
+npm run db:generate
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 to view the landing page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open http://localhost:3000/dashboard to view the starter dashboard.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database workflow
 
-## Learn More
+Point `DATABASE_URL` at a PostgreSQL database, then run:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run db:push
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open Prisma Studio when you want to inspect records locally:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:studio
+```
 
-## Deploy on Vercel
+## Suggested next implementation steps
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Add authentication and role-aware access control
+- Replace sample dashboard data with Prisma-backed queries
+- Wire invoice and reminder events to external providers
+- Add the AI note-to-follow-up action behind a server route
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev`: start the local dev server
+- `npm run build`: create the production build
+- `npm run lint`: run ESLint
+- `npm run db:generate`: generate the Prisma client
+- `npm run db:push`: push the schema to your database
+- `npm run db:studio`: open Prisma Studio
+
+## Notes
+
+The current dashboard uses sample data so the app is runnable before a database is configured.
