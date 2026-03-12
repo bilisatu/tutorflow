@@ -1,6 +1,8 @@
-import { bookings, dashboardStats, followUps } from "@/lib/mock-data";
+import { bookings, followUps } from "@/lib/mock-data";
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { AddClientForm } from "./add-client-form";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -8,6 +10,25 @@ export default async function DashboardPage() {
   if (!session?.user) {
     redirect("/api/auth/signin");
   }
+
+  // 1. Get the user's business
+  const membership = await prisma.membership.findFirst({
+    where: { userId: session.user.id },
+  });
+
+  // 2. Fetch real numbers from the database
+  const clientCount = membership 
+    ? await prisma.client.count({ where: { businessId: membership.businessId } })
+    : 0;
+
+  // 3. Fetch real clients
+  const realClients = membership
+    ? await prisma.client.findMany({ 
+        where: { businessId: membership.businessId },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      })
+    : [];
 
   return (
     <main className="min-h-screen px-6 py-8 md:px-10 lg:px-14">
@@ -47,15 +68,24 @@ export default async function DashboardPage() {
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {dashboardStats.map((stat) => (
-            <article key={stat.label} className="glass rounded-[1.5rem] p-5">
-              <p className="text-sm text-muted">{stat.label}</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">
-                {stat.value}
-              </p>
-              <p className="mt-2 text-sm text-muted">{stat.delta}</p>
-            </article>
-          ))}
+          <article className="glass rounded-[1.5rem] p-5">
+            <p className="text-sm text-muted">Active clients</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight">
+              {clientCount}
+            </p>
+            <p className="mt-2 text-sm text-brand-deep">Real database count</p>
+          </article>
+          
+          <article className="glass rounded-[1.5rem] p-5">
+            <p className="text-sm text-muted">Upcoming bookings</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight">0</p>
+            <p className="mt-2 text-sm text-muted">Needs wiring</p>
+          </article>
+          
+          <article className="glass rounded-[1.5rem] p-5 border-dashed border-2 border-brand/30 bg-brand/5 relative overflow-hidden">
+            <p className="text-sm font-semibold text-brand-deep mb-3">Add a new client</p>
+            <AddClientForm />
+          </article>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -63,34 +93,31 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-                  Upcoming bookings
+                  Your Clients
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold">This week</h2>
+                <h2 className="mt-2 text-2xl font-semibold">Latest added</h2>
               </div>
-              <span className="text-sm text-muted">3 visible items</span>
             </div>
             <div className="mt-6 space-y-4">
-              {bookings.map((booking) => (
-                <div
-                  key={`${booking.student}-${booking.start}`}
-                  className="rounded-[1.5rem] border border-foreground/8 bg-white/70 p-5"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-lg font-semibold tracking-tight">
-                        {booking.student}
-                      </p>
-                      <p className="mt-1 text-sm text-muted">{booking.service}</p>
-                    </div>
-                    <span className="rounded-full bg-accent/12 px-3 py-1 text-xs font-semibold text-accent">
-                      {booking.status}
-                    </span>
-                  </div>
-                  <p className="mt-4 font-mono text-xs uppercase tracking-[0.22em] text-muted">
-                    {booking.start}
-                  </p>
+              {realClients.length === 0 ? (
+                <div className="rounded-[1.5rem] border border-dashed border-foreground/20 p-8 text-center text-muted">
+                  No clients yet. Add one above!
                 </div>
-              ))}
+              ) : (
+                realClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className="rounded-[1.5rem] border border-foreground/8 bg-white/70 p-5"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <p className="text-lg font-semibold tracking-tight">
+                        {client.fullName}
+                      </p>
+                      <p className="text-sm text-muted">{client.email || "No email"}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </article>
 
