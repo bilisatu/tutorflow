@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { AddClientForm } from "./add-client-form";
 import { AddBookingForm } from "./add-booking-form";
 import { InvoiceButton } from "./invoice-button";
+import { PayInvoiceButton } from "./pay-invoice-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -192,14 +193,7 @@ export default async function DashboardPage() {
                       <p className="text-sm text-muted">
                         {invoice.status} • {invoice.createdAt.toLocaleDateString()}
                       </p>
-                      <a 
-                        href={`https://stripe.com`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-xs font-semibold hover:underline"
-                      >
-                        Open payment link &rarr;
-                      </a>
+                      <PayInvoiceButton invoiceId={invoice.id} />
                     </div>
                   </div>
                 ))

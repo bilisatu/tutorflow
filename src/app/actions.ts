@@ -3,6 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import Stripe from "stripe";
+import { redirect } from "next/navigation";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock", {
+  // @ts-ignore
+  apiVersion: "2024-12-18.acacia",
+});
 
 export async function addClient(formData: FormData) {
   const session = await auth();
@@ -104,4 +111,52 @@ export async function createInvoice(bookingId: string, amountDollars: number) {
   });
 
   revalidatePath("/dashboard");
+}
+
+export async function createStripeCheckout(invoiceId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: { client: true, business: true }
+  });
+
+  if (!invoice) throw new Error("Invoice not found");
+
+  const membership = await prisma.membership.findFirst({
+    where: { userId: session.user.id, businessId: invoice.businessId },
+  });
+
+  if (!membership) throw new Error("Unauthorized");
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    // Return a mock URL if user hasn't put in their API key yet
+    redirect(`/dashboard?warn=missing_stripe_key&invoice=${invoice.id}`);
+  }
+
+  const checkoutSession = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Session Invoice - ${invoice.client.fullName}`,
+            description: "Invoice #" + invoice.id.slice(-6).toUpperCase(),
+          },
+          unit_amount: invoice.amountCents,
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: { invoiceId: invoice.id },
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?canceled=true`,
+  });
+
+  if (checkoutSession.url) {
+    redirect(checkoutSession.url);
+  }
 }
