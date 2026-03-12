@@ -1,14 +1,37 @@
 import { bookings, dashboardStats, followUps } from "@/lib/mock-data";
+import { auth, signOut } from "@/auth";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/api/auth/signin");
+  }
+
   return (
     <main className="min-h-screen px-6 py-8 md:px-10 lg:px-14">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="glass rounded-[2rem] p-6 md:p-8">
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-muted">
-            Protected dashboard scaffold
-          </p>
-          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-mono text-xs uppercase tracking-[0.26em] text-muted">
+              Protected dashboard scaffold
+            </p>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium">{session.user.email}</span>
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut();
+                }}
+              >
+                <button className="rounded-full bg-brand/10 hover:bg-brand/20 px-4 py-2 text-sm font-semibold text-brand-deep transition-colors">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
                 Operations for a small tutoring business.
@@ -17,8 +40,8 @@ export default function DashboardPage() {
                 This page is currently backed by sample data. Replace these cards with authenticated, business-scoped Prisma queries as your next implementation step.
               </p>
             </div>
-            <div className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white">
-              Auth hook-up pending
+            <div className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white">
+              Auth Hooked Up
             </div>
           </div>
         </header>
