@@ -32,6 +32,35 @@ export async function addClient(formData: FormData) {
     },
   });
 
-  // Tell Next.js to refresh the dashboard so the new client shows up instantly
+export async function addBooking(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const clientId = formData.get("clientId") as string;
+  const startsAtRaw = formData.get("startsAt") as string;
+  
+  if (!clientId || !startsAtRaw) throw new Error("Client and Start Time are required");
+
+  // Get the user's business
+  const membership = await prisma.membership.findFirst({
+    where: { userId: session.user.id },
+  });
+
+  if (!membership) throw new Error("No business found for this user");
+
+  // A basic one-hour lesson
+  const startsAt = new Date(startsAtRaw);
+  const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000); 
+
+  await prisma.booking.create({
+    data: {
+      businessId: membership.businessId,
+      clientId,
+      startsAt,
+      endsAt,
+      status: "SCHEDULED"
+    }
+  });
+
   revalidatePath("/dashboard");
 }

@@ -3,6 +3,7 @@ import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AddClientForm } from "./add-client-form";
+import { AddBookingForm } from "./add-booking-form";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -26,6 +27,16 @@ export default async function DashboardPage() {
     ? await prisma.client.findMany({ 
         where: { businessId: membership.businessId },
         orderBy: { createdAt: 'desc' },
+        take: 5
+      })
+    : [];
+
+  // 4. Fetch real bookings
+  const upcomingBookings = membership
+    ? await prisma.booking.findMany({
+        where: { businessId: membership.businessId, status: "SCHEDULED" },
+        include: { client: true },
+        orderBy: { startsAt: 'asc' },
         take: 5
       })
     : [];
@@ -78,13 +89,18 @@ export default async function DashboardPage() {
           
           <article className="glass rounded-[1.5rem] p-5">
             <p className="text-sm text-muted">Upcoming bookings</p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight">0</p>
-            <p className="mt-2 text-sm text-muted">Needs wiring</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight">{upcomingBookings.length}</p>
+            <p className="mt-2 text-sm text-brand-deep">Real scheduled count</p>
           </article>
           
           <article className="glass rounded-[1.5rem] p-5 border-dashed border-2 border-brand/30 bg-brand/5 relative overflow-hidden">
             <p className="text-sm font-semibold text-brand-deep mb-3">Add a new client</p>
             <AddClientForm />
+          </article>
+
+          <article className="glass rounded-[1.5rem] p-5 border-dashed border-2 border-accent/30 bg-accent/5 relative overflow-hidden">
+            <p className="text-sm font-semibold text-accent mb-3">Schedule session</p>
+            <AddBookingForm clients={realClients.map(c => ({ id: c.id, fullName: c.fullName }))} />
           </article>
         </section>
 
@@ -93,27 +109,34 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-                  Your Clients
+                  Your Schedule
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold">Latest added</h2>
+                <h2 className="mt-2 text-2xl font-semibold">Upcoming Sessions</h2>
               </div>
             </div>
             <div className="mt-6 space-y-4">
-              {realClients.length === 0 ? (
+              {upcomingBookings.length === 0 ? (
                 <div className="rounded-[1.5rem] border border-dashed border-foreground/20 p-8 text-center text-muted">
-                  No clients yet. Add one above!
+                  No sessions scheduled. Book one above!
                 </div>
               ) : (
-                realClients.map((client) => (
+                upcomingBookings.map((booking) => (
                   <div
-                    key={client.id}
+                    key={booking.id}
                     className="rounded-[1.5rem] border border-foreground/8 bg-white/70 p-5"
                   >
-                    <div className="flex flex-col gap-1">
-                      <p className="text-lg font-semibold tracking-tight">
-                        {client.fullName}
-                      </p>
-                      <p className="text-sm text-muted">{client.email || "No email"}</p>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-lg font-semibold tracking-tight">
+                          {booking.client.fullName}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          {booking.startsAt.toLocaleDateString()} at {booking.startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-accent/12 px-3 py-1 text-xs font-semibold text-accent">
+                        {booking.status}
+                      </span>
                     </div>
                   </div>
                 ))
