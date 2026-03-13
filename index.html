@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TutorFlow</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffdf8;
+        --ink: #1f2a44;
+        --muted: #5f6b84;
+        --accent: #0f63c9;
+        --line: #d6deeb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Inter", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 0% 0%, #e6f0ff 0, transparent 45%),
+          radial-gradient(circle at 100% 100%, #ffe9d9 0, transparent 42%),
+          var(--bg);
+      }
+
+      .wrap {
+        width: min(960px, 92vw);
+        margin: 48px auto;
+      }
+
+      .card {
+        background: color-mix(in srgb, var(--surface) 92%, white 8%);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 34px;
+        box-shadow: 0 20px 70px rgba(31, 42, 68, 0.1);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.1rem, 5vw, 4rem);
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 1.08rem;
+      }
+
+      .badge {
+        display: inline-block;
+        margin-bottom: 14px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        background: #0f63c914;
+        color: var(--accent);
+      }
+
+      .actions {
+        margin-top: 26px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      .btn {
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        border: 1px solid var(--line);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+      }
+
+      .btn.ghost {
+        background: white;
+        color: var(--ink);
+      }
+
+      .note {
+        margin-top: 14px;
+        font-size: 0.95rem;
+      }
+
+      ul {
+        margin-top: 22px;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      li {
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <span class="badge">TutorFlow</span>
+        <h1>TutorFlow Website</h1>
+        <p>
+          This GitHub Pages site is the static website for TutorFlow. The full SaaS app in this
+          repository includes server-side authentication and database features that run best on
+          Vercel or another Node.js host.
+        </p>
+
+        <ul>
+          <li>Focused workflow for tutors: clients, bookings, invoices, and follow-ups.</li>
+          <li>Built with Next.js, TypeScript, Prisma, and PostgreSQL-ready schema.</li>
+          <li>Source code is available in this repository.</li>
+        </ul>
+
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/bilisatu/tutorflow">View Source Code</a>
+          <a class="btn ghost" href="https://github.com/bilisatu/tutorflow#readme">Read Project Docs</a>
+        </div>
+
+        <p class="note">
+          Want the full app online (including dashboard login and database)? Deploy this repo to Vercel.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
